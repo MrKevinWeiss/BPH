@@ -42,9 +42,14 @@ try:
 except ImportError:
     readline = None
 from philip_pal.philip_shell import PhilipShell
+try:
+    from .bph_if import BphIf
+except (ImportError, SystemError):
+    from bph_if import BphIf
 
 class BphShell(PhilipShell):
 
+    prompt = 'BPT: '
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
