@@ -1,0 +1,37 @@
+Designator Footprint               Mid X         Mid Y         Ref X         Ref Y         Pad X         Pad Y TB      Rotation Comment        
+
+R1         RESC1608X55X30LL15T15     37.9984mm     29.6926mm     37.9984mm     29.6926mm     37.9984mm     29.0676mm  T         90.00 2.2k           
+R4         RESC1608X55X30LL15T15          55mm       48.25mm          55mm       48.25mm          55mm      48.875mm  T        270.00 2.2k           
+R5         RESC1608X55X30LL15T15          55mm          51mm          55mm          51mm          55mm      50.375mm  T         90.00 2.2k           
+R6         RESC1608X55X30LL15T15       39.25mm          82mm       39.25mm          82mm      38.625mm          82mm  T          0.00 2.2k           
+R7         RESC1608X55X30LL15T15        36.5mm          82mm        36.5mm          82mm      35.875mm          82mm  T          0.00 2.2k           
+R8         RESC1608X55X30LL15T15       33.75mm          82mm       33.75mm          82mm      33.125mm          82mm  T          0.00 2.2k           
+R9         RESC1608X55X30LL15T15      54.275mm      36.325mm      54.275mm      36.325mm      54.275mm       36.95mm  T        270.00 2.2k           
+R10        RESC3225X60X45NL20T20     44.7072mm     69.6485mm     44.7072mm     69.6485mm     44.7072mm     71.0985mm  T        270.00 Vishay Dale CRCW1210220RFKEA
+R11        RESC3126X65X50ML10T20       48.52mm     69.6451mm       48.52mm     69.6451mm       48.52mm     68.1701mm  T         90.00 Yageo RL1210FR-070R1L
+R12        RESC1608X55X30LL15T15     47.2072mm     64.1485mm     47.2072mm     64.1485mm     47.2072mm     64.7735mm  T        270.00 1M             
+R13        RESC1608X55X30LL15T15       38.75mm        47.4mm       38.75mm        47.4mm      38.125mm        47.4mm  T        360.00 1M             
+R14        RESC1608X55X25LL10T15       54.75mm       82.25mm       54.75mm       82.25mm        54.1mm       82.25mm  T        360.00 Yageo AC0603JR-070RL
+Q1         ONSC-SOT-23-3-318-08_V     40.2072mm     64.6485mm     40.2072mm     64.6485mm     41.2072mm     63.6985mm  T        180.00 Diodes Inc. DMP2035U-7
+Q2         PCB-q6ucxelsfuo3l1kgupd0-1     44.2072mm     64.6485mm     44.2072mm     64.6485mm     45.1672mm     63.6885mm  T        180.00 Diodes Inc. DMN63D8L-7
+Q3         ONSC-SOT-23-3-318-08_V       39.25mm       50.15mm       39.25mm       50.15mm        38.3mm       49.15mm  T         90.00 Diodes Inc. DMP2035U-7
+Q4         PCB-q6ucxelsfuo3l1kgupd0-1          38mm       44.65mm          38mm       44.65mm       37.04mm       43.69mm  T         90.00 Diodes Inc. DMN63D8L-7
+C1         CL10B105MO8NNWC       40.75mm          38mm       40.75mm          38mm        39.9mm          38mm  T        360.00 1uF            
+C2         CL10B105MO8NNWC       34.25mm       57.75mm       34.25mm       57.75mm       34.25mm        58.6mm  T        270.00 1uF            
+C3         CAPC1608X90X35LL15T15     39.2072mm     71.3985mm     39.2072mm     71.3985mm     39.8572mm     71.3985mm  T        180.00 0.1uF          
+C4         CAPC1608X90X35LL15T15     51.2595mm     36.4412mm     51.2595mm     36.4412mm     51.9095mm     36.4412mm  T        180.00 0.1uF          
+C5         CL10B105MO8NNWC     54.2595mm     39.4412mm     54.2595mm     39.4412mm     54.2595mm     40.2912mm  T        270.00 1uF            
+D1         VSH-TLMX1100        38.0238mm     27.2796mm     38.0238mm     27.2796mm     38.0238mm     28.0046mm  T        360.00 Vishay Semiconductor TLMG1100-GS08
+D2         CUS10S30              39.25mm          79mm       39.25mm          79mm       39.25mm       77.85mm  T         90.00 Toshiba CUS10S30 H3F
+D3         CUS10S30               36.5mm          79mm        36.5mm          79mm        36.5mm       77.85mm  T         90.00 Toshiba CUS10S30 H3F
+D4         CUS10S30              33.75mm          79mm       33.75mm          79mm       33.75mm       77.85mm  T         90.00 Toshiba CUS10S30 H3F
+D5         CUS10S30               36.5mm       50.15mm        36.5mm       50.15mm        36.5mm        51.3mm  T        270.00 Toshiba CUS10S30 H3F
+U1         PCB-TSSOP10-BoxOverlay     39.2072mm     68.6485mm     37.7072mm     69.6485mm     37.0072mm     69.6485mm  T        360.00 Texas Instruments INA226AIDGST
+U2         SOT-23-OT5_N        51.2595mm     39.4412mm     51.2595mm     39.4412mm     52.4595mm     38.4912mm  T        180.00 MCP6001UT-I/OT 
+S1         PCB-3w9549xuhg7p8i6xstg2-1       43.75mm        47.4mm       43.75mm        47.4mm       45.95mm        44.9mm  T         90.00 Nidec Copal CL-SB-12B-02T
+
+
+
+
+
+
