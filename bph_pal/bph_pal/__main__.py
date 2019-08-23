@@ -37,6 +37,8 @@ def main():
                         help='Changes pin to input by key or name')
     parser.add_argument('--power_source', '-ps',
                         help='Sets the power source mode')
+    parser.add_argument('--init_pins', '-ip', action='store_true',
+                        help='Initializes pins to defaults', default=False)
     pargs = parser.parse_args()
 
     logging.basicConfig(level=getattr(logging, pargs.loglevel.upper()))
@@ -53,6 +55,8 @@ def main():
         BPH().onecmd("input_pin " + str(pargs.input_pin))
     if pargs.power_source:
         BPH().onecmd("power_source " + str(pargs.power_source))
+    if pargs.init_pins:
+        BPH(init_state=True)
 
 
 main()
