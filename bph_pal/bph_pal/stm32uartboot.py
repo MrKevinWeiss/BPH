@@ -12,6 +12,8 @@ import argparse
 import time
 import os
 from pprint import pformat
+import urllib.request
+
 try:
     import wiringpi
 except ImportError:
@@ -28,6 +30,13 @@ except ImportError:
     print("Cannot verify unless deepdiff is installed")
     print("Try \"pip3 install deepdiff\"")
     DeepDiff = None
+try:
+    from .pin_control import PinControl
+except (ImportError, SystemError):
+    try:
+        from bph_pal.pin_control import PinControl
+    except (ImportError, SystemError):
+        from pin_control import PinControl
 
 
 class GPIOPin():
@@ -40,18 +49,19 @@ class GPIOPin():
         invert(bool): Invert io active/inactive levels of a pin
     """
 
-    def __init__(self, pin, dev=None, invert=False):
+    def __init__(self, pin, dev=None, invert=False, filename=None):
         try:
             pin = int(pin)
             wiringpi.wiringPiSetupGpio()
             wiringpi.pinMode(pin, wiringpi.GPIO.OUTPUT)
-            self.pin = pin
             if invert:
                 self._active = lambda: wiringpi.digitalWrite(pin, 0)
                 self._inactive = lambda: wiringpi.digitalWrite(pin, 1)
             else:
                 self._active = lambda: wiringpi.digitalWrite(pin, 1)
                 self._inactive = lambda: wiringpi.digitalWrite(pin, 0)
+            self._input = lambda: wiringpi.pinMode(
+                pin, wiringpi.GPIO.INPUT)
 
         except ValueError:
             if pin.upper() == "RTS":
@@ -61,6 +71,7 @@ class GPIOPin():
                 else:
                     self._active = lambda: dev.setRTS(1)
                     self._inactive = lambda: dev.setRTS(0)
+                self._input = lambda: self._inactive
             elif pin.upper() == "DTR":
                 if invert:
                     self._active = lambda: dev.setDTR(0)
@@ -68,12 +79,32 @@ class GPIOPin():
                 else:
                     self._active = lambda: dev.setDTR(1)
                     self._inactive = lambda: dev.setDTR(0)
+                    self._input = lambda: self._inactive
+            else:
+
+                pins = PinControl(filename=filename)
+                wiringpi.wiringPiSetupGpio()
+                wiringpi.pinMode(
+                    pins.get_pin_num_and_key(pin)[0], wiringpi.GPIO.OUTPUT)
+                if invert:
+                    self._active = lambda: wiringpi.digitalWrite(
+                        pins.get_pin_num_and_key(pin)[0], 0)
+                    self._inactive = lambda: wiringpi.digitalWrite(
+                        pins.get_pin_num_and_key(pin)[0], 1)
+                else:
+                    self._active = lambda: wiringpi.digitalWrite(
+                        pins.get_pin_num_and_key(pin)[0], 1)
+                    self._inactive = lambda: wiringpi.digitalWrite(
+                        pins.get_pin_num_and_key(pin)[0], 0)
+                self.input = lambda: wiringpi.pinMode(
+                    pins.get_pin_num_and_key(pin)[0], wiringpi.GPIO.INPUT)
         self._state = 0
         self.inactive()
 
     def active(self):
         """Activates GPIO pin"""
         self._state = 1
+
         self._active()
 
     def inactive(self):
@@ -131,11 +162,14 @@ class STM32BootloaderDevice():
         self._bytes_to_dev = None
         self._bytes_from_dev = None
         self._page_size = 1024
+        logging.debug("args = %r", args)
         if 'page_size' in args:
             if args['page_size']:
                 self._page_size = args['page_size']
-        if 'binfile' in args:
-            if args['binfile'] != '':
+        if args['erase'] or args['verify'] in args or args['write'] in args:
+            if args['philip_ver']:
+                self.read_binfile_from_online(args['philip_ver'])
+            else:
                 self.read_binfile(args['binfile'])
         if 'dev' in args:
             self._dev = args['dev']
@@ -167,6 +201,22 @@ class STM32BootloaderDevice():
         if not binfile:
             binfile = [s for s in os.listdir(os.getcwd()) if ".bin" in s][0]
             logging.debug("Found binary to read")
+        with open(binfile, 'rb') as bfile:
+            logging.info("Reading %s", binfile)
+            self._bytes_to_dev = list(bfile.read())
+            logging.debug("Binary has 0x%X bytes", len(self._bytes_to_dev))
+
+    def read_binfile_from_online(self, version):
+        """Read the bytes to program from file or directory with .bin file
+
+        Args:
+            binfile(string): Path to binary file
+        """
+        url = "https://github.com/riot-appstore/PHiLIP/releases/download/v"
+        url += version
+        url += "/PHiLIP-BLUEPILL.bin"
+        binfile = urllib.request.urlretrieve(url)[0]
+        logging.debug("fetching binary from %r", url)
         with open(binfile, 'rb') as bfile:
             logging.info("Reading %s", binfile)
             self._bytes_to_dev = list(bfile.read())
@@ -336,6 +386,7 @@ class STM32BootloaderDevice():
         logging.debug("stop_bootloader")
         self._boot_pin.inactive()
         self.reset()
+        self._reset_pin.input()
 
     def reset(self):
         """Resets the device
@@ -405,11 +456,11 @@ Binary file to program, if not provided it takes the first *.bin file in the
 current directory""",
                         default=None)
     parser.add_argument('--reset_pin', '-rp',
-                        help='Reset pin designator, either an int or RTS/DTR',
-                        default="DTR")
+                        help='Reset pin designator, int/RTS/DTR/gpio_map pin',
+                        default="BP_RST")
     parser.add_argument('--boot_pin', '-bp',
-                        help='Boot pin designator, either an int or RTS/DTR',
-                        default="RTS")
+                        help='Boot pin designator, int/RTS/DTR/gpio_map pin',
+                        default="BOOT0")
     parser.add_argument('--reset_invert', '-ri', help='Reset pin invert',
                         action="store_false", default=True)
     parser.add_argument('--boot_invert', '-bi', help='Boot pin invert',
@@ -417,7 +468,12 @@ current directory""",
     parser.add_argument('--page_size', '-psz',
                         help='Flash page size of the device only for erase',
                         default=None)
-    parser.add_argument('--loglevel', choices=log_levels, default='info',
+    parser.add_argument('--pin_config_filename', '-pf',
+                        help="Filename of config",
+                        default='bph_pinout_v2c.json')
+    parser.add_argument('--philip_ver', '-pv',
+                        help='Version of PHiLIP to fetch from online')
+    parser.add_argument('--loglevel', '-l', choices=log_levels, default='info',
                         help='Python logger log level')
 
     start = time.time()

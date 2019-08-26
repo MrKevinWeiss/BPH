@@ -1,0 +1,16 @@
+Horizontal Dimension, max	68.7952mm
+Vertical Dimension, max		70.0033mm
+Total surface area		4617.8361sq.mm
+Copper layer count		2
+Smallest track width		0.0254mm
+Smallest hole size		0.9400mm
+Biggest hole size		2.5000mm
+Number of plated through holes	130
+Number of plated slots		0
+Number of unplated holes	0
+Number of unplated slots	0
+Number of cutouts		2
+Number of Unique Parts		14
+Number of Components		29
+Number of populated SMT Pads	74
+Number of sides with components 1

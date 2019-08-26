@@ -39,11 +39,15 @@ import argparse
 import time
 import os
 import glob
-from pathlib import Path
-from json import load, decoder
+from json import decoder
 from pprint import pprint
 import subprocess
 from cmd import Cmd
+try:
+    import readline
+except ImportError:
+    print("Cannot import readline, cannot use history")
+    readline = None
 try:
     from .driver_ina226 import INA226
 except (ImportError, SystemError):
@@ -52,31 +56,23 @@ except (ImportError, SystemError):
     except (ImportError, SystemError):
         from driver_ina226 import INA226
 try:
-    import readline
-except ImportError:
-    print("Cannot import readline, cannot use history")
-    readline = None
-try:
-    import wiringpi
-except ImportError:
-    print("Cannot import wiring pi, resorting to printing")
-    wiringpi = None
+    from .pin_control import PinControl
+except (ImportError, SystemError):
+    try:
+        from bph_pal.pin_control import PinControl
+    except (ImportError, SystemError):
+        from pin_control import PinControl
 
 
 class BphShell(Cmd):
-
+    """Basic shell control for the Bluepill Hat for the Raspberry Pi 3"""
     prompt = "BPH: "
 
     def __init__(self, path=None, filename='bph_pinout_v2c.json',
                  init_state=False):
-        if path is None:
-            path = str(Path(__file__).parents[0]) + '/config/'
-        full_path = os.path.join(path, filename)
-        with open(full_path) as bph_pinout_file:
-            bph_pinout = load(bph_pinout_file)
-        self.gpio_map = bph_pinout['gpio']
-        self.shunt = bph_pinout['shunt_res']
-        self._set_gpio_map(self.gpio_map, init_state)
+        self.pins = PinControl(path, filename, init_state)
+        self.shunt = self.pins.pinout['shunt_res']
+        self.gpio_map = self.pins.pinout['gpio']
         self.curmon = INA226(0x44, shunt_val=self.shunt['high_range']['val'])
         Cmd.__init__(self)
 
@@ -98,10 +94,9 @@ class BphShell(Cmd):
                                  FileExistsError
         """
         try:
-            with open(arg) as bph_pinout_file:
-                bph_pinout = load(bph_pinout_file)
-            self.gpio_map = bph_pinout['gpio']
-            self._set_gpio_map(self.gpio_map, True)
+            self.pins.load_pinmap(arg, False)
+            self.shunt = self.pins.pinout['shunt_res']
+            self.gpio_map = self.pins.pinout['gpio']
         except (FileNotFoundError, decoder.JSONDecodeError) as exc:
             print(exc)
 
@@ -134,7 +129,7 @@ class BphShell(Cmd):
             pin_name: Pin name or key
         """
         try:
-            self._write_pin_state(arg, 1)
+            self.pins.write_pin_state(arg, 1)
         except (ValueError, TypeError, KeyError) as exc:
             print(exc)
 
@@ -153,7 +148,7 @@ class BphShell(Cmd):
             pin_name: Pin name or key
         """
         try:
-            self._write_pin_state(arg, 0)
+            self.pins.write_pin_state(arg, 0)
         except (ValueError, TypeError, KeyError) as exc:
             print(exc)
 
@@ -172,7 +167,7 @@ class BphShell(Cmd):
             pin_name: Pin name or key
         """
         try:
-            self._pin_to_input(arg)
+            self.pins.pin_to_input(arg)
         except (ValueError, TypeError, KeyError) as exc:
             print(exc)
 
@@ -205,23 +200,23 @@ class BphShell(Cmd):
         if arg == "external":
             print("external power on, USB power off, PHiLIP on")
             self._set_usb(False)
-            self._pin_to_input("BP_RST")
-            self._write_pin_state("EXT_V_EN", 1)
+            self.pins.pin_to_input("BP_RST")
+            self.pins.write_pin_state("EXT_V_EN", 1)
         elif arg == "none":
             print("external power off, USB power off, PHiLIP off")
             self._set_usb(False)
-            self._write_pin_state("BP_RST", 0)
-            self._write_pin_state("EXT_V_EN", 0)
+            self.pins.write_pin_state("BP_RST", 0)
+            self.pins.write_pin_state("EXT_V_EN", 0)
         elif arg == "all":
             print("external power on, USB power on, PHiLIP on")
             self._set_usb(True)
-            self._pin_to_input("BP_RST")
-            self._write_pin_state("EXT_V_EN", 1)
+            self.pins.pin_to_input("BP_RST")
+            self.pins.write_pin_state("EXT_V_EN", 1)
         elif arg == "usb":
             print("external power off, USB power on, PHiLIP on")
             self._set_usb(True)
-            self._pin_to_input("BP_RST")
-            self._write_pin_state("EXT_V_EN", 0)
+            self.pins.pin_to_input("BP_RST")
+            self.pins.write_pin_state("EXT_V_EN", 0)
         else:
             print("Invalid argument, no power change")
 
@@ -256,10 +251,10 @@ class BphShell(Cmd):
                 print("Current = {} A".format(self.curmon.get_current()))
             elif len(func_args) is 1:
                 if func_args[0] == "high_range":
-                    self._write_pin_state("RES_BYP", 1)
+                    self.pins.write_pin_state("RES_BYP", 1)
                     self.curmon.set_shunt(self.shunt['high_range']['val'])
                 elif func_args[0] == "low_range":
-                    self._write_pin_state("RES_BYP", 0)
+                    self.pins.write_pin_state("RES_BYP", 0)
                     self.curmon.set_shunt(self.shunt['low_range']['val'])
                 else:
                     raise KeyError
@@ -355,78 +350,10 @@ class BphShell(Cmd):
         arg = arg
         pprint(sorted(self.gpio_map.items()))
 
-    @staticmethod
-    def _set_gpio_map(gpio_map, initialize):
-        logging.debug('Setting defaults')
-        if wiringpi is None:
-            logging.info("Setting up gpio")
-        else:
-            wiringpi.wiringPiSetupGpio()
-        for gpio_value in gpio_map.values():
-            logging.debug("Setting GPIO %r: on pin %r to %r",
-                          gpio_value['name'],
-                          gpio_value['pin'],
-                          gpio_value['mode'])
-            if initialize:
-                if wiringpi is None:
-                    logging.info("Pin %r mode is %r", gpio_value['pin'],
-                                 gpio_value['mode'])
-                else:
-                    wiringpi.pinMode(gpio_value['pin'], gpio_value['mode'])
-            if 'state' in gpio_value and initialize:
-                if wiringpi is None:
-                    logging.info("Pin %r state is %r", gpio_value['pin'],
-                                 gpio_value['state'])
-                else:
-                    wiringpi.digitalWrite(gpio_value['pin'],
-                                          gpio_value['state'])
-                logging.debug("State is %r", gpio_value['state'])
-
-    def _pin_to_input(self, arg):
-        pin_num, pin_key = self._get_pin_num_and_key(arg)
-        if wiringpi is None:
-            logging.info("Pin %r mode is %r", pin_num, 0)
-            self.gpio_map[pin_key]['mode'] = 0
-        else:
-            wiringpi.pinMode(pin_num, wiringpi.GPIO.INPUT)
-            self.gpio_map[pin_key]['mode'] = wiringpi.GPIO.INPUT
-        self.gpio_map[pin_key].pop("state", None)
-
     def _show_pins(self, text, line):
         mline = line.partition(' ')[2]
         offs = len(mline) - len(text)
         return [s[offs:] for s in self.gpio_map.keys() if s.startswith(mline)]
-
-    def _write_pin_state(self, arg, state):
-        pin_num, pin_key = self._get_pin_num_and_key(arg)
-        logging.debug("Writing pin %r for %r to %r", pin_num, pin_key, state)
-        if wiringpi is None:
-            logging.info("Pin %r mode is %r", pin_num, 1)
-            logging.info("Pin %r state is %r", pin_num, state)
-            self.gpio_map[pin_key]['mode'] = 1
-        else:
-            wiringpi.pinMode(pin_num, wiringpi.GPIO.OUTPUT)
-            wiringpi.digitalWrite(pin_num, state)
-            self.gpio_map[pin_key]['mode'] = wiringpi.GPIO.OUTPUT
-        self.gpio_map[pin_key]['state'] = state
-
-    def _get_pin_num_and_key(self, arg):
-        pin_num = None
-        pin_key = None
-        if arg in self.gpio_map:
-            pin_num = self.gpio_map[arg]['pin']
-        else:
-            for val in self.gpio_map.values():
-                if val['name'] == arg:
-                    pin_num = val['pin']
-                    break
-            if pin_num is None:
-                pin_num = int(arg)
-        for key, val in self.gpio_map.items():
-            if val['pin'] == pin_num:
-                pin_key = key
-                break
-        return pin_num, pin_key
 
     @staticmethod
     def do_exit(arg):
@@ -466,7 +393,6 @@ def main():
     pargs = parser.parse_args()
 
     logging.basicConfig(level=getattr(logging, pargs.loglevel.upper()))
-    logging.debug("asdf")
     try:
         BphShell(pargs.pin_config_path,
                  pargs.pin_config_filename,

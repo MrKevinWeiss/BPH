@@ -15,7 +15,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="bph_pal",
-    version="0.0.1",
+    version="0.1.1",
     author="Kevin Weiss",
     author_email="weiss.kevin604@gmail.com",
     license="MIT",
@@ -36,7 +36,7 @@ setup(
     ],
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
-    install_requires=['pyserial', 'wiringpi', 'smbus'],
+    install_requires=['pyserial', 'wiringpi', 'smbus', 'deepdiff', 'readline'],
     entry_points={
         'console_scripts': ['bootload_philip=bph_pal.stm32uartboot:main',
                             'bph_shell=bph_pal.bph_shell:main'],
