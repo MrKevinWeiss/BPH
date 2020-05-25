@@ -26,3 +26,30 @@ Along with the BPH board, a [PHiLIP-b](https://github.com/riot-appstore/PHiLIP) 
 ## Using the BPH
 
 A [BPH interface](bph_pal/) is provided to make usage easier.
+
+## Wiring
+
+Using a standard ribbon cable to connect the BPH to the DUT the following wiring should be followed
+
+BPH Pin | Color  | DUT Pin
+--------|--------|----------
+1       | BLACK  | DUT_NSS
+2       | WHITE  | DUT_SCK
+3       | GREY   | DUT_MISO
+4       | PURPLE | DUT_MOSI
+5       | BLUE   | DUT_IC
+6       | GREEN  | DUT_SCL
+7       | YELLOW | GND
+8       | ORANGE | DUT_SDA
+9       | RED    | DUT_RST
+10      | BROWN  | DUT_PWM
+11      | BLACK  | DUT_CTS
+12      | WHITE  | DUT_DAC
+13      | GREY   | DUT_RTS
+14      | PURPLE | EXT_V_OUT
+15      | BLUE   | DUT_RX
+16      | GREEN  | DEBUG2
+17      | YELLOW | DUT_TX
+18      | ORANGE | DEBUG1
+19      | RED    | DUT_ADC
+20      | BROWN  | DEBUG0
